@@ -58,7 +58,7 @@ export default function App() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.name}>Beverly Vladislav Tan - 00000074964</Text>
+      <Text style={styles.name}>Saint Christopher Shyandon - 00000075026</Text>
       <Button title="Get Geo Location" onPress={getLocation} />
       <Button title="Save Location" onPress={saveLocationToStorage} />
       <Button title="Get Saved Location" onPress={getLocationFromStorage} />
