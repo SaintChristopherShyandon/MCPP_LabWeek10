@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button, Text, View, StyleSheet } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Location from 'expo-location';
+import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
 
 export default function App() {
   const [location, setLocation] = useState(null);
@@ -9,7 +10,6 @@ export default function App() {
   const [longitude, setLongitude] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
 
-  // Fungsi untuk meminta izin dan mendapatkan lokasi
   const getLocation = async () => {
     let { status } = await Location.requestForegroundPermissionsAsync();
     if (status !== 'granted') {
@@ -23,45 +23,34 @@ export default function App() {
     setLocation(location.coords);
   };
 
-  // Fungsi untuk menyimpan lokasi ke AsyncStorage
-  const saveLocationToStorage = async () => {
+  const saveLocationToFile = async () => {
     if (latitude && longitude) {
+      const fileUri = FileSystem.documentDirectory + 'location_data.txt';
+      const locationData = `Latitude: ${latitude}, Longitude: ${longitude}\n`;
+  
       try {
-        const locationData = JSON.stringify({ latitude, longitude });
-        await AsyncStorage.setItem('location', locationData);
-        console.log("Location saved to AsyncStorage:", { latitude, longitude });
+        await FileSystem.writeAsStringAsync(fileUri, locationData, { encoding: FileSystem.EncodingType.UTF8 });
+        console.log("Location data saved to:", fileUri);
+  
+        if (await Sharing.isAvailableAsync()) {
+          await Sharing.shareAsync(fileUri);
+        } else {
+          setErrorMsg("Sharing is not available on this device.");
+        }
       } catch (error) {
-        console.log("Error saving location to AsyncStorage:", error);
+        console.log("Error saving location data to file:", error);
+        setErrorMsg("Error saving location data to file");
       }
     } else {
-      setErrorMsg("No location data to save");
+      setErrorMsg("No location data to save to file");
     }
-  };
-
-  // Fungsi untuk mengambil lokasi dari AsyncStorage
-  const getLocationFromStorage = async () => {
-    try {
-      const value = await AsyncStorage.getItem('location');
-      if (value !== null) {
-        const storedLocation = JSON.parse(value);
-        setLatitude(storedLocation.latitude);
-        setLongitude(storedLocation.longitude);
-        console.log("Location retrieved from AsyncStorage:", storedLocation);
-      } else {
-        setErrorMsg('No location data found');
-      }
-    } catch (error) {
-      console.log("Error retrieving location from AsyncStorage:", error);
-      setErrorMsg('Error retrieving location');
-    }
-  };
+  };  
 
   return (
     <View style={styles.container}>
       <Text style={styles.name}>Saint Christopher Shyandon - 00000075026</Text>
       <Button title="Get Geo Location" onPress={getLocation} />
-      <Button title="Save Location" onPress={saveLocationToStorage} />
-      <Button title="Get Saved Location" onPress={getLocationFromStorage} />
+      <Button title="Save Location to File" onPress={saveLocationToFile} />
 
       {errorMsg && <Text style={styles.error}>{errorMsg}</Text>}
 
